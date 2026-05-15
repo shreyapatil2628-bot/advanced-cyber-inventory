@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Update Items – Cyber Inventory</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --bg: #070d1a; --panel: #0c1527; --panel2: #0f1e35;
+      --border: #1a3050; --accent: #00d4ff; --green: #00ff9d;
+      --text: #c8e0f0; --muted: #4a7a9b; --error: #ff4d6a;
+      --amber: #ffb830;
+      --font: 'Rajdhani', sans-serif; --mono: 'Share Tech Mono', monospace;
+    }
+    html, body { height:100%; background:var(--bg); font-family:var(--font); color:var(--text); }
+    body::before {
+      content:''; position:fixed; inset:0;
+      background-image: linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px), linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);
+      background-size:40px 40px; z-index:0; pointer-events:none;
+    }
+
+    nav {
+      position:relative; z-index:10; background:var(--panel);
+      border-bottom:1px solid var(--border); padding:0 32px;
+      display:flex; align-items:center; justify-content:space-between; height:56px;
+    }
+    .nav-brand { display:flex; align-items:center; gap:10px; font-size:14px; font-weight:700; letter-spacing:3px; color:var(--accent); text-transform:uppercase; }
+    .nav-brand .dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+    .nav-links { display:flex; gap:4px; align-items:center; }
+    .nav-links a { padding:7px 16px; font-size:12px; font-weight:600; letter-spacing:2px; text-transform:uppercase; text-decoration:none; color:var(--muted); border-radius:3px; border:1px solid transparent; transition:all 0.2s; }
+    .nav-links a:hover { color:var(--accent); background:rgba(0,212,255,0.06); }
+    .nav-links a.active { color:var(--accent); border-color:var(--border); background:var(--panel2); }
+    .nav-links .sep { width:1px; height:20px; background:var(--border); margin:0 4px; }
+    .btn-logout { padding:6px 14px; font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; cursor:pointer; border-radius:3px; border:1px solid var(--error); color:var(--error); background:transparent; font-family:var(--font); transition:all 0.2s; }
+    .btn-logout:hover { background:rgba(255,77,106,0.1); }
+    .nav-user { display:flex; align-items:center; gap:14px; }
+    .user-chip { font-size:11px; font-family:var(--mono); color:var(--muted); letter-spacing:1px; }
+    .user-chip span { color:var(--green); }
+
+    .main { position:relative; z-index:1; max-width:1080px; margin:40px auto; padding:0 24px; }
+
+    .page-title { display:flex; align-items:center; gap:12px; margin-bottom:24px; }
+    .page-title-icon { width:40px; height:40px; border:1px solid var(--accent); border-radius:3px; display:flex; align-items:center; justify-content:center; color:var(--accent); }
+    .page-title h1 { font-size:20px; font-weight:700; letter-spacing:3px; text-transform:uppercase; }
+    .page-title p { font-size:11px; color:var(--muted); font-family:var(--mono); letter-spacing:1px; margin-top:2px; }
+
+    /* Stats bar */
+    .stats-bar { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+    .stat-card { background:var(--panel); border:1px solid var(--border); border-radius:4px; padding:14px 18px; }
+    .stat-card .stat-label { font-size:10px; letter-spacing:2px; color:var(--muted); font-family:var(--mono); text-transform:uppercase; }
+    .stat-card .stat-val { font-size:24px; font-weight:700; color:var(--accent); margin-top:4px; }
+    .stat-card.green .stat-val { color:var(--green); }
+    .stat-card.amber .stat-val { color:var(--amber); }
+    .stat-card.red .stat-val { color:var(--error); }
+
+    /* Search bar */
+    .toolbar { display:flex; gap:12px; margin-bottom:16px; align-items:center; }
+    .search-wrap { flex:1; position:relative; }
+    .search-wrap input {
+      width:100%; padding:9px 14px 9px 38px;
+      background:var(--panel); border:1px solid var(--border); border-radius:3px;
+      color:var(--text); font-family:var(--mono); font-size:13px; outline:none;
+      transition:border-color 0.2s;
+    }
+    .search-wrap input:focus { border-color:var(--accent); }
+    .search-wrap .s-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); }
+    .filter-select {
+      padding:9px 14px; background:var(--panel); border:1px solid var(--border); border-radius:3px;
+      color:var(--muted); font-family:var(--mono); font-size:12px; outline:none;
+    }
+    .filter-select:focus { border-color:var(--accent); }
+    .filter-select option { background:var(--panel); }
+
+    /* Table */
+    .table-wrap { background:var(--panel); border:1px solid var(--border); border-radius:4px; overflow:hidden; }
+    .table-header { padding:14px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .table-header span { font-size:10px; letter-spacing:3px; color:var(--accent); font-family:var(--mono); text-transform:uppercase; }
+    .table-header small { font-size:11px; color:var(--muted); font-family:var(--mono); }
+
+    table { width:100%; border-collapse:collapse; }
+    th { padding:11px 16px; text-align:left; font-size:10px; letter-spacing:2px; color:var(--muted); font-family:var(--mono); text-transform:uppercase; border-bottom:1px solid var(--border); font-weight:400; white-space:nowrap; }
+    td { padding:12px 16px; border-bottom:1px solid rgba(26,48,80,0.5); font-size:13px; vertical-align:middle; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:rgba(0,212,255,0.03); }
+    .td-id { font-family:var(--mono); color:var(--accent); font-size:12px; }
+    .td-name { color:var(--text); font-weight:600; }
+    .td-type { font-size:11px; letter-spacing:1px; }
+    .type-badge {
+      padding:3px 10px; border-radius:2px; font-size:10px;
+      letter-spacing:1px; text-transform:uppercase; font-family:var(--mono);
+      background:rgba(0,212,255,0.1); color:var(--accent); border:1px solid rgba(0,212,255,0.2);
+      white-space:nowrap;
+    }
+    .qty-orig { color:var(--muted); font-family:var(--mono); }
+    .qty-used { color:var(--amber); font-family:var(--mono); }
+    .qty-rem  { color:var(--green); font-family:var(--mono); font-weight:700; }
+    .qty-rem.low { color:var(--error); }
+
+    .edit-input {
+      width:70px; padding:5px 8px;
+      background:rgba(0,212,255,0.06); border:1px solid var(--accent); border-radius:3px;
+      color:var(--accent); font-family:var(--mono); font-size:13px; outline:none; text-align:center;
+    }
+
+    .btn-update {
+      padding:5px 14px; border-radius:3px; cursor:pointer;
+      font-size:11px; font-weight:700; letter-spacing:1px; font-family:var(--font);
+      border:1px solid var(--accent); color:var(--accent); background:transparent;
+      transition:all 0.2s;
+    }
+    .btn-update:hover { background:rgba(0,212,255,0.15); }
+    .btn-delete {
+      padding:5px 14px; border-radius:3px; cursor:pointer;
+      font-size:11px; font-weight:700; letter-spacing:1px; font-family:var(--font);
+      border:1px solid var(--error); color:var(--error); background:transparent;
+      transition:all 0.2s; margin-left:6px;
+    }
+    .btn-delete:hover { background:rgba(255,77,106,0.12); }
+
+    .empty-row td { text-align:center; padding:40px; color:var(--muted); font-family:var(--mono); font-size:13px; }
+
+    #toast {
+      position:fixed; bottom:28px; right:28px; padding:14px 22px; border-radius:4px;
+      font-family:var(--mono); font-size:13px; letter-spacing:1px; display:none; z-index:999;
+      border-left:3px solid; animation:slideIn 0.3s ease;
+    }
+    #toast.success { background:#071a10; border-color:var(--green); color:var(--green); }
+    #toast.error   { background:#1a0710; border-color:var(--error); color:var(--error); }
+    @keyframes slideIn { from{transform:translateX(20px);opacity:0}to{transform:none;opacity:1} }
+  </style>
+</head>
+<body>
+<nav>
+  <div class="nav-brand"><div class="dot"></div>Cyber Inventory</div>
+  <div class="nav-links">
+    <a href="add-item.html">Add Item</a>
+    <a href="update-item.html" class="active">Update / Delete</a>
+    <a href="report.html">Report</a>
+    <div class="sep"></div>
+  </div>
+  <div class="nav-user">
+    <span class="user-chip">USER: <span id="navUser">—</span></span>
+    <button class="btn-logout" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="page-title">
+    <div class="page-title-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Update / Delete Items</h1>
+      <p>// MANAGE INVENTORY RECORDS</p>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-card"><div class="stat-label">Total Items</div><div class="stat-val" id="s-total">—</div></div>
+    <div class="stat-card green"><div class="stat-label">Total Remaining</div><div class="stat-val" id="s-rem">—</div></div>
+    <div class="stat-card amber"><div class="stat-label">Total Used</div><div class="stat-val" id="s-used">—</div></div>
+    <div class="stat-card red"><div class="stat-label">Low Stock</div><div class="stat-val" id="s-low">—</div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="s-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </span>
+      <input type="text" id="searchBox" placeholder="Search by Item ID, Name, or Type..." oninput="renderTable()">
+    </div>
+    <select class="filter-select" id="typeFilter" onchange="renderTable()">
+      <option value="">All Types</option>
+      <option>Hardware</option><option>Software</option><option>Network Equipment</option>
+      <option>Security Device</option><option>Storage</option><option>Peripheral</option>
+      <option>Server Component</option><option>Cable / Connector</option><option>Other</option>
+    </select>
+  </div>
+
+  <div class="table-wrap">
+    <div class="table-header">
+      <span>Inventory Records</span>
+      <small id="rec-count">Loading...</small>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Item ID</th><th>Name</th><th>Type</th>
+          <th>Original Qty</th><th>Used Qty (Edit)</th><th>Remaining</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr class="empty-row"><td colspan="7">Loading data...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const token = localStorage.getItem('token');
+  if (!token) window.location.href = 'login.html';
+  document.getElementById('navUser').textContent = (localStorage.getItem('username') || '—').toUpperCase();
+
+  let allItems = [];
+
+  function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = type; t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 3000);
+  }
+
+  async function loadItems() {
+    try {
+      const res = await fetch('/api/items/all', { headers: { 'Authorization': 'Bearer ' + token } });
+      allItems = await res.json();
+      updateStats();
+      renderTable();
+    } catch (e) { showToast('✖ Failed to load items', 'error'); }
+  }
+
+  function updateStats() {
+    const total = allItems.length;
+    const totalRem = allItems.reduce((s, i) => s + i.remaining_quantity, 0);
+    const totalUsed = allItems.reduce((s, i) => s + i.used_quantity, 0);
+    const lowStock = allItems.filter(i => i.remaining_quantity <= (i.original_quantity * 0.2)).length;
+    document.getElementById('s-total').textContent = total;
+    document.getElementById('s-rem').textContent = totalRem;
+    document.getElementById('s-used').textContent = totalUsed;
+    document.getElementById('s-low').textContent = lowStock;
+  }
+
+  function renderTable() {
+    const search = document.getElementById('searchBox').value.toLowerCase();
+    const typeF = document.getElementById('typeFilter').value;
+
+    const filtered = allItems.filter(item => {
+      const matchSearch = !search ||
+        item.item_id.toLowerCase().includes(search) ||
+        item.item_name.toLowerCase().includes(search) ||
+        item.type.toLowerCase().includes(search);
+      const matchType = !typeF || item.type === typeF;
+      return matchSearch && matchType;
+    });
+
+    document.getElementById('rec-count').textContent = `${filtered.length} record${filtered.length !== 1 ? 's' : ''}`;
+    const tbody = document.getElementById('tableBody');
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No records found</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(item => {
+      const isLow = item.remaining_quantity <= (item.original_quantity * 0.2);
+      return `<tr>
+        <td class="td-id">${item.item_id}</td>
+        <td class="td-name">${item.item_name}</td>
+        <td><span class="type-badge">${item.type}</span></td>
+        <td class="qty-orig">${item.original_quantity}</td>
+        <td><input class="edit-input" type="number" id="used_${item.id}" value="${item.used_quantity}" min="0" max="${item.original_quantity}"></td>
+        <td class="qty-rem ${isLow ? 'low' : ''}">${item.remaining_quantity}${isLow ? ' ⚠' : ''}</td>
+        <td>
+          <button class="btn-update" onclick="updateItem(${item.id}, ${item.original_quantity})">Update</button>
+          <button class="btn-delete" onclick="deleteItem(${item.id}, '${item.item_name}')">Delete</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function updateItem(id, original) {
+    const used = parseInt(document.getElementById('used_' + id).value);
+    if (isNaN(used) || used < 0) { showToast('⚠ Invalid quantity', 'error'); return; }
+    if (used > original) { showToast('⚠ Used qty cannot exceed original qty', 'error'); return; }
+    try {
+      const res = await fetch('/api/items/update/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ used_quantity: used })
+      });
+      const data = await res.json();
+      if (data.message) { showToast('✔ Item updated', 'success'); loadItems(); }
+      else showToast('✖ ' + (data.error || 'Update failed'), 'error');
+    } catch (e) { showToast('✖ Server error', 'error'); }
+  }
+
+  async function deleteItem(id, name) {
+    if (!confirm(`Delete "${name}"?\n\nThis action cannot be undone.`)) return;
+    try {
+      await fetch('/api/items/delete/' + id, {
+        method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }
+      });
+      showToast('✔ Item deleted', 'success');
+      loadItems();
+    } catch (e) { showToast('✖ Delete failed', 'error'); }
+  }
+
+  loadItems();
+</script>
+</body>
+</html>

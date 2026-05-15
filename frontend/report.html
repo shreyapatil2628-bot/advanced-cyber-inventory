@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Report – Cyber Inventory</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --bg:#070d1a; --panel:#0c1527; --panel2:#0f1e35;
+      --border:#1a3050; --accent:#00d4ff; --green:#00ff9d;
+      --text:#c8e0f0; --muted:#4a7a9b; --error:#ff4d6a; --amber:#ffb830;
+      --font:'Rajdhani',sans-serif; --mono:'Share Tech Mono',monospace;
+    }
+    html,body { height:100%; background:var(--bg); font-family:var(--font); color:var(--text); }
+    body::before {
+      content:''; position:fixed; inset:0;
+      background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);
+      background-size:40px 40px; z-index:0; pointer-events:none;
+    }
+
+    nav {
+      position:relative; z-index:10; background:var(--panel);
+      border-bottom:1px solid var(--border); padding:0 32px;
+      display:flex; align-items:center; justify-content:space-between; height:56px;
+    }
+    .nav-brand { display:flex; align-items:center; gap:10px; font-size:14px; font-weight:700; letter-spacing:3px; color:var(--accent); text-transform:uppercase; }
+    .nav-brand .dot { width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite; }
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+    .nav-links{display:flex;gap:4px;align-items:center;}
+    .nav-links a{padding:7px 16px;font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;text-decoration:none;color:var(--muted);border-radius:3px;border:1px solid transparent;transition:all 0.2s;}
+    .nav-links a:hover{color:var(--accent);background:rgba(0,212,255,0.06);}
+    .nav-links a.active{color:var(--accent);border-color:var(--border);background:var(--panel2);}
+    .nav-links .sep{width:1px;height:20px;background:var(--border);margin:0 4px;}
+    .btn-logout{padding:6px 14px;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:3px;border:1px solid var(--error);color:var(--error);background:transparent;font-family:var(--font);transition:all 0.2s;}
+    .btn-logout:hover{background:rgba(255,77,106,0.1);}
+    .nav-user{display:flex;align-items:center;gap:14px;}
+    .user-chip{font-size:11px;font-family:var(--mono);color:var(--muted);letter-spacing:1px;}
+    .user-chip span{color:var(--green);}
+
+    .main{position:relative;z-index:1;max-width:1200px;margin:40px auto;padding:0 24px;}
+
+    .page-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+    .title-left{display:flex;align-items:center;gap:12px;}
+    .page-title-icon{width:40px;height:40px;border:1px solid var(--accent);border-radius:3px;display:flex;align-items:center;justify-content:center;color:var(--accent);}
+    .page-title h1{font-size:20px;font-weight:700;letter-spacing:3px;text-transform:uppercase;}
+    .page-title p{font-size:11px;color:var(--muted);font-family:var(--mono);letter-spacing:1px;margin-top:2px;}
+    .title-actions{display:flex;gap:10px;}
+    .btn-print{
+      padding:9px 20px; background:transparent; border:1px solid var(--accent);
+      color:var(--accent); border-radius:3px; cursor:pointer;
+      font-family:var(--font); font-size:13px; font-weight:600;
+      letter-spacing:2px; text-transform:uppercase; transition:all 0.2s;
+      display:flex; align-items:center; gap:6px;
+    }
+    .btn-print:hover{background:rgba(0,212,255,0.1);}
+    .btn-export{
+      padding:9px 20px; background:var(--green); border:none;
+      color:#070d1a; border-radius:3px; cursor:pointer;
+      font-family:var(--font); font-size:13px; font-weight:700;
+      letter-spacing:2px; text-transform:uppercase; transition:all 0.2s;
+      display:flex; align-items:center; gap:6px;
+    }
+    .btn-export:hover{background:#00e88d;box-shadow:0 0 16px rgba(0,255,157,0.2);}
+
+    /* Summary cards */
+    .summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;}
+    .sum-card{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:14px 16px;}
+    .sum-card .slabel{font-size:10px;letter-spacing:2px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;}
+    .sum-card .sval{font-size:22px;font-weight:700;color:var(--accent);margin-top:4px;}
+    .sum-card.g .sval{color:var(--green);}
+    .sum-card.a .sval{color:var(--amber);}
+    .sum-card.r .sval{color:var(--error);}
+
+    /* Charts row */
+    .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+    .chart-card{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:20px;}
+    .chart-title{font-size:10px;letter-spacing:3px;color:var(--accent);font-family:var(--mono);text-transform:uppercase;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+    .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+    .bar-label{font-size:11px;font-family:var(--mono);color:var(--muted);width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .bar-track{flex:1;height:8px;background:rgba(0,212,255,0.08);border-radius:4px;overflow:hidden;}
+    .bar-fill{height:100%;border-radius:4px;background:var(--accent);transition:width 0.6s ease;}
+    .bar-fill.green{background:var(--green);}
+    .bar-fill.amber{background:var(--amber);}
+    .bar-val{font-size:11px;font-family:var(--mono);color:var(--text);width:30px;text-align:right;}
+
+    /* Toolbar */
+    .toolbar{display:flex;gap:12px;margin-bottom:14px;align-items:center;}
+    .search-wrap{flex:1;position:relative;}
+    .search-wrap input{width:100%;padding:9px 14px 9px 38px;background:var(--panel);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;transition:border-color 0.2s;}
+    .search-wrap input:focus{border-color:var(--accent);}
+    .search-wrap .s-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);}
+    .filter-select{padding:9px 14px;background:var(--panel);border:1px solid var(--border);border-radius:3px;color:var(--muted);font-family:var(--mono);font-size:12px;outline:none;}
+    .filter-select option{background:var(--panel);}
+
+    /* Table */
+    .table-wrap{background:var(--panel);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+    .table-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+    .table-header span{font-size:10px;letter-spacing:3px;color:var(--accent);font-family:var(--mono);text-transform:uppercase;}
+    .table-header small{font-size:11px;color:var(--muted);font-family:var(--mono);}
+    .report-table-scroll{overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;min-width:900px;}
+    th{padding:11px 14px;text-align:left;font-size:10px;letter-spacing:2px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:400;white-space:nowrap;}
+    td{padding:11px 14px;border-bottom:1px solid rgba(26,48,80,0.5);font-size:13px;vertical-align:middle;}
+    tr:last-child td{border-bottom:none;}
+    tr:hover td{background:rgba(0,212,255,0.03);}
+    .td-id{font-family:var(--mono);color:var(--accent);font-size:12px;}
+    .td-name{color:var(--text);font-weight:600;}
+    .td-date,.td-qty{font-family:var(--mono);}
+    .type-badge{padding:3px 10px;border-radius:2px;font-size:10px;letter-spacing:1px;text-transform:uppercase;font-family:var(--mono);background:rgba(0,212,255,0.1);color:var(--accent);border:1px solid rgba(0,212,255,0.2);white-space:nowrap;}
+    .status-ok{display:inline-block;padding:3px 10px;background:rgba(0,255,157,0.1);color:var(--green);border:1px solid rgba(0,255,157,0.2);border-radius:2px;font-size:10px;letter-spacing:1px;font-family:var(--mono);}
+    .status-low{display:inline-block;padding:3px 10px;background:rgba(255,77,106,0.1);color:var(--error);border:1px solid rgba(255,77,106,0.2);border-radius:2px;font-size:10px;letter-spacing:1px;font-family:var(--mono);}
+    .qty-rem{font-family:var(--mono);font-weight:700;}
+    .qty-rem.ok{color:var(--green);}
+    .qty-rem.low{color:var(--error);}
+    .qty-used{font-family:var(--mono);color:var(--amber);}
+
+    .empty-row td{text-align:center;padding:48px;color:var(--muted);font-family:var(--mono);font-size:13px;}
+
+    /* Print styles */
+    @media print {
+      body{background:#fff;color:#000;}
+      nav,.title-actions,.toolbar,body::before{display:none!important;}
+      .main{margin:0;padding:0;max-width:100%;}
+      .sum-card,.chart-card{border:1px solid #ccc;}
+      th,td{color:#000;border-color:#ddd;}
+      .td-id,.td-date,.td-qty,.qty-rem,.qty-used,.bar-label,.bar-val{color:#000;}
+      .type-badge{background:#eee;color:#000;border-color:#ccc;}
+      .status-ok{background:#e6fff4;color:#006633;}
+      .status-low{background:#ffe6ea;color:#990022;}
+    }
+  </style>
+</head>
+<body>
+<nav>
+  <div class="nav-brand"><div class="dot"></div>Cyber Inventory</div>
+  <div class="nav-links">
+    <a href="add-item.html">Add Item</a>
+    <a href="update-item.html">Update / Delete</a>
+    <a href="report.html" class="active">Report</a>
+    <div class="sep"></div>
+  </div>
+  <div class="nav-user">
+    <span class="user-chip">USER: <span id="navUser">—</span></span>
+    <button class="btn-logout" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="page-title">
+    <div class="title-left">
+      <div class="page-title-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Inventory Report</h1>
+        <p>// FULL SYSTEM INVENTORY REPORT — <span id="reportDate">—</span></p>
+      </div>
+    </div>
+    <div class="title-actions">
+      <button class="btn-print" onclick="window.print()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+        </svg>
+        Print
+      </button>
+      <button class="btn-export" onclick="exportCSV()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Export CSV
+      </button>
+    </div>
+  </div>
+
+  <div class="summary-grid">
+    <div class="sum-card"><div class="slabel">Total Items</div><div class="sval" id="s-total">—</div></div>
+    <div class="sum-card g"><div class="slabel">Total Remaining</div><div class="sval" id="s-rem">—</div></div>
+    <div class="sum-card a"><div class="slabel">Total Used</div><div class="sval" id="s-used">—</div></div>
+    <div class="sum-card"><div class="slabel">Total Received</div><div class="sval" id="s-recv">—</div></div>
+    <div class="sum-card r"><div class="slabel">Low Stock Items</div><div class="sval" id="s-low">—</div></div>
+  </div>
+
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">Items by Type</div>
+      <div id="typeChart">Loading...</div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Stock Level by Item (Top 6)</div>
+      <div id="stockChart">Loading...</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="s-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </span>
+      <input type="text" id="searchBox" placeholder="Search by Item ID, Name, or Type..." oninput="renderTable()">
+    </div>
+    <select class="filter-select" id="typeFilter" onchange="renderTable()">
+      <option value="">All Types</option>
+      <option>Hardware</option><option>Software</option><option>Network Equipment</option>
+      <option>Security Device</option><option>Storage</option><option>Peripheral</option>
+      <option>Server Component</option><option>Cable / Connector</option><option>Other</option>
+    </select>
+    <select class="filter-select" id="statusFilter" onchange="renderTable()">
+      <option value="">All Status</option>
+      <option value="ok">OK Stock</option>
+      <option value="low">Low Stock</option>
+    </select>
+  </div>
+
+  <div class="table-wrap">
+    <div class="table-header">
+      <span>Full Inventory Report</span>
+      <small id="rec-count">Loading...</small>
+    </div>
+    <div class="report-table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Item ID</th><th>Item Name</th><th>Type</th><th>Description</th>
+            <th>Date Entered</th><th>Original Qty</th><th>Received</th>
+            <th>Used</th><th>Remaining</th><th>Saved</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="reportBody">
+          <tr class="empty-row"><td colspan="11">Loading data...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  const token = localStorage.getItem('token');
+  if (!token) window.location.href = 'login.html';
+  document.getElementById('navUser').textContent = (localStorage.getItem('username') || '—').toUpperCase();
+  document.getElementById('reportDate').textContent = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }).toUpperCase();
+
+  let allItems = [];
+
+  function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+  async function loadReport() {
+    try {
+      const res = await fetch('/api/report/full', { headers: { 'Authorization': 'Bearer ' + token } });
+      allItems = await res.json();
+      updateSummary();
+      buildTypeChart();
+      buildStockChart();
+      renderTable();
+    } catch (e) {
+      document.getElementById('reportBody').innerHTML = '<tr class="empty-row"><td colspan="11">Failed to load report data</td></tr>';
+    }
+  }
+
+  function updateSummary() {
+    document.getElementById('s-total').textContent = allItems.length;
+    document.getElementById('s-rem').textContent  = allItems.reduce((s,i)=>s+i.remaining_quantity,0);
+    document.getElementById('s-used').textContent = allItems.reduce((s,i)=>s+i.used_quantity,0);
+    document.getElementById('s-recv').textContent = allItems.reduce((s,i)=>s+i.quantity_received,0);
+    document.getElementById('s-low').textContent  = allItems.filter(i=>i.remaining_quantity<=(i.original_quantity*0.2)).length;
+  }
+
+  function buildTypeChart() {
+    const counts = {};
+    allItems.forEach(i => { counts[i.type] = (counts[i.type] || 0) + 1; });
+    const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    const max = sorted[0]?.[1] || 1;
+    document.getElementById('typeChart').innerHTML = sorted.map(([type, count]) => `
+      <div class="bar-row">
+        <span class="bar-label">${type}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${(count/max*100).toFixed(1)}%"></div></div>
+        <span class="bar-val">${count}</span>
+      </div>`).join('') || '<span style="color:var(--muted);font-size:12px;font-family:var(--mono)">No data</span>';
+  }
+
+  function buildStockChart() {
+    const top = [...allItems].sort((a,b)=>b.remaining_quantity-a.remaining_quantity).slice(0,6);
+    const max = top[0]?.original_quantity || 1;
+    document.getElementById('stockChart').innerHTML = top.map(item => {
+      const remPct = (item.remaining_quantity / item.original_quantity * 100).toFixed(1);
+      const isLow = item.remaining_quantity <= item.original_quantity * 0.2;
+      return `<div class="bar-row">
+        <span class="bar-label">${item.item_name}</span>
+        <div class="bar-track"><div class="bar-fill ${isLow?'amber':'green'}" style="width:${remPct}%"></div></div>
+        <span class="bar-val">${item.remaining_quantity}</span>
+      </div>`;
+    }).join('') || '<span style="color:var(--muted);font-size:12px;font-family:var(--mono)">No data</span>';
+  }
+
+  function renderTable() {
+    const search = document.getElementById('searchBox').value.toLowerCase();
+    const typeF  = document.getElementById('typeFilter').value;
+    const statusF = document.getElementById('statusFilter').value;
+
+    const filtered = allItems.filter(item => {
+      const isLow = item.remaining_quantity <= item.original_quantity * 0.2;
+      const matchSearch = !search || item.item_id.toLowerCase().includes(search) || item.item_name.toLowerCase().includes(search) || item.type.toLowerCase().includes(search);
+      const matchType = !typeF || item.type === typeF;
+      const matchStatus = !statusF || (statusF === 'low' ? isLow : !isLow);
+      return matchSearch && matchType && matchStatus;
+    });
+
+    document.getElementById('rec-count').textContent = `${filtered.length} record${filtered.length!==1?'s':''}`;
+    const tbody = document.getElementById('reportBody');
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="11">No records match your filters</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(item => {
+      const isLow = item.remaining_quantity <= item.original_quantity * 0.2;
+      return `<tr>
+        <td class="td-id">${item.item_id}</td>
+        <td class="td-name">${item.item_name}</td>
+        <td><span class="type-badge">${item.type}</span></td>
+        <td style="color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.description||'—'}</td>
+        <td class="td-date">${item.enter_date}</td>
+        <td class="td-qty" style="color:var(--muted)">${item.original_quantity}</td>
+        <td class="td-qty" style="color:var(--text)">${item.quantity_received}</td>
+        <td class="qty-used">${item.used_quantity}</td>
+        <td class="qty-rem ${isLow?'low':'ok'}">${item.remaining_quantity}</td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--muted)">${item.saved.toUpperCase()}</td>
+        <td><span class="${isLow?'status-low':'status-ok'}">${isLow?'LOW STOCK':'OK'}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function exportCSV() {
+    const headers = ['Item ID','Item Name','Type','Description','Date Entered','Original Qty','Received','Used','Remaining','Saved','Status'];
+    const rows = allItems.map(item => {
+      const isLow = item.remaining_quantity <= item.original_quantity * 0.2;
+      return [item.item_id, item.item_name, item.type, item.description||'', item.enter_date,
+              item.original_quantity, item.quantity_received, item.used_quantity,
+              item.remaining_quantity, item.saved.toUpperCase(), isLow?'LOW STOCK':'OK']
+        .map(v => `"${String(v).replace(/"/g,'""')}"`).join(',');
+    });
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url;
+    a.download = `inventory-report-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  }
+
+  loadReport();
+</script>
+</body>
+</html>
