@@ -1,43 +1,40 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const pool = require('../db');
 const authMiddleware = require('../middleware/auth');
 
-// Add item
-router.post('/add', authMiddleware, (req, res) => {
+router.post('/add', authMiddleware, async (req, res) => {
   const { item_id, item_name, description, type, enter_date, quantity_received, saved } = req.body;
   try {
-    db.prepare(`
+    await pool.query(`
       INSERT INTO items (item_id, item_name, description, type, enter_date, original_quantity, quantity_received, remaining_quantity, saved)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(item_id, item_name, description, type, enter_date, quantity_received, quantity_received, quantity_received, saved);
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+    `, [item_id, item_name, description, type, enter_date, quantity_received, quantity_received, quantity_received, saved]);
     res.json({ message: 'Item added successfully' });
   } catch (e) {
     res.status(400).json({ error: 'Item ID already exists or invalid data' });
   }
 });
 
-// Get all items
-router.get('/all', authMiddleware, (req, res) => {
-  const items = db.prepare('SELECT * FROM items').all();
-  res.json(items);
+router.get('/all', authMiddleware, async (req, res) => {
+  const result = await pool.query('SELECT * FROM items');
+  res.json(result.rows);
 });
 
-// Update item (used/remaining)
-router.put('/update/:id', authMiddleware, (req, res) => {
+router.put('/update/:id', authMiddleware, async (req, res) => {
   const { used_quantity } = req.body;
-  const item = db.prepare('SELECT * FROM items WHERE id = ?').get(req.params.id);
+  const result = await pool.query('SELECT * FROM items WHERE id = $1', [req.params.id]);
+  const item = result.rows[0];
   if (!item) return res.status(404).json({ error: 'Item not found' });
   const remaining = item.original_quantity - used_quantity;
   if (remaining < 0) return res.status(400).json({ error: 'Used quantity exceeds original' });
-  db.prepare('UPDATE items SET used_quantity = ?, remaining_quantity = ? WHERE id = ?')
-    .run(used_quantity, remaining, req.params.id);
+  await pool.query('UPDATE items SET used_quantity=$1, remaining_quantity=$2 WHERE id=$3',
+    [used_quantity, remaining, req.params.id]);
   res.json({ message: 'Updated successfully' });
 });
 
-// Delete item
-router.delete('/delete/:id', authMiddleware, (req, res) => {
-  db.prepare('DELETE FROM items WHERE id = ?').run(req.params.id);
+router.delete('/delete/:id', authMiddleware, async (req, res) => {
+  await pool.query('DELETE FROM items WHERE id = $1', [req.params.id]);
   res.json({ message: 'Deleted successfully' });
 });
 
