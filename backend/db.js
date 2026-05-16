@@ -1,7 +1,7 @@
 const Database = require('better-sqlite3');
-const db = new Database(require('path').join(__dirname, '../inventory.db'));
+const path = require('path');
+const db = new Database(path.join(__dirname, '../inventory.db'));
 
-// Create tables
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
