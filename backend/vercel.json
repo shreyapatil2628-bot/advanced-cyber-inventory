@@ -10,6 +10,6 @@
     { "src": "/add-item.html", "dest": "frontend/add-item.html" },
     { "src": "/update-item.html", "dest": "frontend/update-item.html" },
     { "src": "/report.html", "dest": "frontend/report.html" },
-    { "src": "/", "dest": "frontend/login.html" }
+    { "src": "/(.*)", "dest": "frontend/login.html" }
   ]
 }
